@@ -1,0 +1,135 @@
+#dialog-form label{
+	display: inline-block;	
+	position: relative;
+	width: 150px;
+}
+
+#dialog-form input, #dialog-form select{
+	width: 200px;
+}
+
+#edit-dialog-form label{
+	display: inline-block;	
+	position: relative;
+	width: 150px;
+}
+
+#edit-dialog-form input, #edit-dialog-form select{
+	width: 200px;
+}
+
+.ui-dialog-buttonset button{
+	float: right;
+}
+
+.ui-dialog-buttonset .ui-button:first-child {float:left !important;}
+
+#detail-dialog-form label{
+	display: inline-block;	
+	position: relative;
+	width: 150px;
+}
+
+#detail-dialog-form input, #detail-dialog-form select{
+	width: 400px;
+}
+
+#newproductsite label{
+	display: inline-block;	
+	position: relative;
+	width: 150px;
+}
+
+#newproductsite input, #newproductsite select{
+	width: 400px;
+}
+
+#editproductsite label{
+	display: inline-block;	
+	position: relative;
+	width: 150px;
+}
+
+#editproductsite input, #editproductsite select{
+	width: 400px;
+}
+
+#testurl_span{
+	display: inline-block;
+	margin-bottom: 5px;
+	margin-left: 160px;
+	margin-top: 10px;
+}
+
+#edit_testurl_span{
+	display: inline-block;
+	margin-bottom: 5px;
+	margin-left: 160px;
+	margin-top: 10px;
+}
+
+#productlist{
+	width: 100%;	
+}
+
+#productlist table{
+	margin: auto;
+	width: 90%;
+}
+
+#scansitelist{
+	width: 100%;	
+}
+
+#scansitelist table{
+	margin: auto;
+	width: 90%;
+}
+
+#scanlist{
+	width: 100%;	
+}
+
+#scanlist table{
+	margin: auto;
+	width: 90%;
+}
+
+#valutalist{
+	width: 100%;	
+}
+
+#valutalist table{
+	margin: auto;
+	width: 90%;
+}
+
+#dialog-newcolor-form label{
+	display: inline-block;	
+	position: relative;
+	width: 150px;
+}
+
+#dialog-newcolor-form input, #dialog-newcolor-form select{
+	width: 200px;
+}
+
+#editcolor-dialog-form label{
+	display: inline-block;	
+	position: relative;
+	width: 150px;
+}
+
+#editcolor-dialog-form input, #editcolor-dialog-form select{
+	width: 200px;
+}
+
+#colorlist{
+	width: 100%;	
+}
+
+#colorlist table{
+	margin: auto;
+	width: 90%;
+}
+

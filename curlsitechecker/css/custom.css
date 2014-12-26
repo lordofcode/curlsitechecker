@@ -1,0 +1,93 @@
+@CHARSET "UTF-8";
+
+html, body{
+	background-color: #ebebeb;
+	height: 100%;
+}
+
+div#container{
+	min-height: 100%;
+	height: auto !important;
+	height: 100%;
+}
+	
+header{
+	height: 98px;
+	background-attachment: fixed;
+	background-image: url('/img/header_bg.jpg');
+	background-repeat: repeat-x;
+}
+
+nav{
+	height: 44px;
+	background-color: #000000;
+	border-bottom: solid 8px #fcc210;
+}
+
+div#main, .tabpane{
+	background-color: #FFFFFF;
+	display: block;
+	min-height: 450px;
+	height: 100% !important;
+	margin: 15px 15px 15px 15px;
+}
+#login-div{
+	background-image: url('/img/login_block.jpg');
+	background-repeat: no-repeat;
+	display: block;
+	position: relative;
+	height: 206px;
+	margin: auto;
+	width: 305px;
+}
+#login-un{
+	border: none;
+	display: block;
+	position: relative;
+	height: 21px;
+	left: 58px;
+	top: 70px;
+	width: 190px;
+}
+#login-pw{
+	border: none;
+	display: block;
+	position: relative;
+	height: 21px;	
+	left: 58px;
+	top: 89px;	
+	width: 190px;	
+}
+#login-submit{
+	display: block;
+	position: relative;
+	left: 198px;
+	top: 112px;			
+}
+
+.addlink{
+	clear: both;
+	display: inline;
+	float: right;
+	margin-bottom: 20px;
+	text-align: right;
+	width: 100%;
+}
+select, textarea {
+    margin-bottom: 12px;
+    padding: 0.4em;
+}
+.jobsteps_fulltable{
+	margin-top: 30px;
+	width: 100%;
+}
+div#logoutdiv{
+	float:right;
+	margin-top:20px;
+	margin-right:20px;	
+}
+
+#logoutdiv a{
+	color: #555555;
+	font-size: 12px;
+}
