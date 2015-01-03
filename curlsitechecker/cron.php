@@ -19,7 +19,7 @@ if (trim($cronKey) == ""){
 }
 else{
 	if ($_REQUEST["cronkey"] == $cronKey){
-		$sm->cron();		
+		$sm->cron(intval($_REQUEST["id"]));		
 	}
 	else{
 		die("<b>Onjuiste aanroep curlsitechecker/cron.php</b>");

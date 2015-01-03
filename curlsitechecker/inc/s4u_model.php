@@ -15,10 +15,12 @@ class S4UModel{
 		  `actief` tinyint(1) NOT NULL,
 		  `xpath` varchar(255) NOT NULL,
 		  `xpath_image` varchar(255) NOT NULL,
+		  `xpath_url` varchar(255) NOT NULL,
 		  `test_url` varchar(255) NOT NULL,
 		  `test_title` varchar(255) NOT NULL,
 		  `test_image` varchar(255) NOT NULL,
 		  `laatste_scan` datetime DEFAULT NULL,
+		  `category_id` int(11) NULL,
 		  PRIMARY KEY (`id`)
 		) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;");
 		
@@ -34,6 +36,10 @@ class S4UModel{
 		if ($exists <= 0){
 			$wpdb->query("INSERT INTO {$table_prefix}s4u_configsetting (name, value) SELECT 'cronkey', ''");	
 		}
+		$exists = intval($wpdb->get_var("SELECT COUNT(1) FROM {$table_prefix}s4u_configsetting WHERE name='geenpost'"));
+		if ($exists <= 0){
+			$wpdb->query("INSERT INTO {$table_prefix}s4u_configsetting (name, value) SELECT 'geenpost', '0'");	
+		}		
 	}
 		 
 	public function fetchUrlData(){
@@ -53,7 +59,8 @@ class S4UModel{
 		$name = addslashes($_POST["name"]);
 		$url = addslashes($_POST["url"]);
 		$actief = intval($_POST["actief"]);
-		$wpdb->query("INSERT INTO {$table_prefix}s4u_scansite (name, url, actief) SELECT '{$name}', '{$url}', '{$actief}'");
+		$categoryid = intval($_POST["category"]);		
+		$wpdb->query("INSERT INTO {$table_prefix}s4u_scansite (name, url, actief, category_id) SELECT '{$name}', '{$url}', '{$actief}', '{$categoryid}'");
 		exit;
 	}
 	 
@@ -65,7 +72,8 @@ class S4UModel{
 		$name = addslashes($_POST["name"]);
 		$url = addslashes($_POST["url"]);
 		$actief = intval($_POST["actief"]);
-		$wpdb->query("UPDATE {$table_prefix}s4u_scansite SET name='{$name}', url='{$url}', actief='{$actief}' WHERE id={$id}");
+		$categoryid = intval($_POST["category"]);
+		$wpdb->query("UPDATE {$table_prefix}s4u_scansite SET name='{$name}', url='{$url}', actief='{$actief}', category_id='{$categoryid}' WHERE id={$id}");
 		exit;
 	}
 
@@ -87,8 +95,9 @@ class S4UModel{
 		$id = intval($_POST["id"]);
 		$xpath = addslashes($_POST["xpath"]);
 		$xpathimage = addslashes($_POST["xpath_image"]);
+		$xpathurl = addslashes($_POST["xpath_url"]);
 		$test_url = addslashes($_POST["testurl"]);
-		$wpdb->query("UPDATE {$table_prefix}s4u_scansite SET xpath='{$xpath}', xpath_image='{$xpathimage}', test_url='{$test_url}' WHERE id={$id}");
+		$wpdb->query("UPDATE {$table_prefix}s4u_scansite SET xpath='{$xpath}', xpath_image='{$xpathimage}', xpath_url='{$xpathurl}', test_url='{$test_url}' WHERE id={$id}");
 		exit;
 	}	
 		
@@ -100,7 +109,7 @@ class S4UModel{
 		if (isset($_POST["id"])){
 			$id = intval($_POST["id"]);
 			$res = $wpdb->get_row("SELECT 
-			`id`,`url`,`actief`,`xpath`,`xpath_image`,
+			`id`,`url`,`actief`,`xpath`,`xpath_image`, `xpath_url`, 
 			CASE WHEN IFNULL(`test_url`,'') = '' THEN url ELSE test_url END AS test_url			
 			FROM {$table_prefix}s4u_scansite WHERE id={$id}", ARRAY_A);
 		}
@@ -300,12 +309,13 @@ class S4UModel{
 		global $table_prefix;
 		$result = "NOTHING DONE";		
 		
-		$rows = $wpdb->get_results("SELECT name, url, xpath, xpath_image FROM {$table_prefix}s4u_scansite WHERE actief=1 AND id=".intval($scansite_id));
+		$rows = $wpdb->get_results("SELECT name, url, xpath, xpath_image, xpath_url, category_id FROM {$table_prefix}s4u_scansite WHERE actief=1 AND id=".intval($scansite_id));
 		if (count($rows) > 0){
 			$result = "";
 			for ($k=0; $k < count($rows); $k++){
 				$title = "";
 				$image = "";
+				$url = "";
 				
 				$titleresult = $this->fetchHtmlPage("fetchscanresult", $rows[$k]->url, "", $rows[$k]->xpath, true);
 				$decoded = json_decode($titleresult);
@@ -320,10 +330,19 @@ class S4UModel{
 						
 					if ($decoded->result == "1"){
 						$image = $decoded->value;
-					}						
+					}
+
+					if ($rows[$k]->xpath_url != ""){					
+						$urlresult = $this->fetchHtmlPage("fetchscanresult", $rows[$k]->url, "", $rows[$k]->xpath_url, true);
+						$decoded = json_decode($urlresult);		
+
+						if ($decoded->result == "1"){
+							$url = $decoded->value;
+						}						
+					}					
 				
 					if ($title != ""){
-						$this->add_Wordpress_Post($rows[$k]->name, $rows[$k]->url, $title, $image);
+						$this->add_Wordpress_Post($rows[$k]->name, $rows[$k]->url, $title, $image, $url, $rows[$k]->category_id);
 					}
 				}
 				else{
@@ -336,7 +355,7 @@ class S4UModel{
 		if ($do_stop) exit;		
 	}
 	
-	function add_Wordpress_Post($name, $url, $title, $image){
+	function add_Wordpress_Post($name, $url, $title, $image, $direct_url, $category_id){
 		// first check image
 		if (preg_match("/^http(.*)$/", strtolower($image))){
 			/* image is ok */
@@ -356,29 +375,80 @@ class S4UModel{
 				}
 			}
 		}
+		
+		if ($direct_url != ""){		
+			if (preg_match("/^http(.*)$/", strtolower($direct_url))){
+				/* image is ok */
+			}
+			else{
+				if (preg_match("/http(.*)/", strtolower($direct_url), $matches)){
+					$direct_url = $matches[0];
+				}
+				else{
+					if (preg_match("/\/\/(.*)/", strtolower($direct_url), $matches)){
+						if (preg_match("/http([s]*):/", strtolower($url), $hostmatch)){
+							$direct_url = $hostmatch[0] . $matches[0]; 
+						}
+					}
+					elseif (preg_match("/\/(.*)/", strtolower($direct_url), $matches)){
+						if (preg_match("/http([s]*):\/\//", strtolower($url), $hostmatch)){
+							$prot = $hostmatch[0];	
+							$domain = str_replace($prot, "", strtolower($url));
+							$domain = substr($domain, 0, strpos($domain, "/"));
+							$direct_url = $prot . $domain . $direct_url;
+						}
+						else{
+							$direct_url = "";	
+						}
+					}				
+					else{
+						$direct_url = "";
+					}
+				}
+			}
+		}
 
 		// first, check if post from this URL with same title already exists (last 5 posts of this site)
-		$criteria = array("meta_key" => "url", "meta_value" => $url);
+		$criteria = array("meta_key" => "url", "meta_value" => ($direct_url != "" ? $direct_url : $url));
 		$posts = get_posts($criteria);
+
+		$originaltitle = strtolower($title);
+		$originaltitle = str_replace("\r", "", $originaltitle);
+		$originaltitle = str_replace("\n", "", $originaltitle);		
+		
 		for ($k=0; $k < count($posts); $k++){
-			if (strtolower($title) == strtolower(get_post_meta($posts[$k]->ID, "original-title", true))){
+			
+			if ($originaltitle == get_post_meta($posts[$k]->ID, "original-title", true)){
+				$added = false;
+				$cats = $posts[$k]->post_category;
+				if (in_array($category_id, $cats) == false){
+					$added = true;
+					array_push($cats, intval($category_id));
+				}
+				if ($added){
+					$posts[$k]->post_category = $cats;
+					wp_update_post($posts[$k]);
+				}
+					
 				echo "<b>Already processed.</b><br/>";
 				return;
 			}	
-		}		
+		}	
 
 		$data = array();
 		$data['ID'] = null;
 		$data['post_title'] = $title;
 		//$data['post_content'] = $title;
+		$data['post_category'] = array($category_id);
 		$data['post_status'] = "draft";
 		$data['comment_status'] = "closed";
 		$data['ping_status'] = "closed";
 		$data['post_date_gmt'] = date('Y-m-d H:n:s', mktime());
 		$p_id = wp_insert_post($data);
 
-		add_post_meta($p_id, "url", $url);
-		add_post_meta($p_id, "original-title", $title);
+		add_post_meta($p_id, "url", ($direct_url != "" ? $direct_url : $url));
+		
+		add_post_meta($p_id, "original-title", $originaltitle);
 		
 		wp_add_post_tags($p_id, $name);
 
@@ -457,7 +527,7 @@ class S4UModel{
 		exit;
 	}
 		
-	function cron(){
+	function cron($siteID){
 		global $wpdb;
 		global $table_prefix;
 		
@@ -474,17 +544,27 @@ class S4UModel{
 		}		
 		
 		if ($_REQUEST["force"] == "true"){
-			$res = $wpdb->get_results("SELECT {$table_prefix}s4u_scansite.id
+			$sql = "SELECT {$table_prefix}s4u_scansite.id
 							FROM {$table_prefix}s4u_scansite
 							WHERE {$table_prefix}s4u_scansite.actief = 1
-							");			
+							";
+			if ($siteID > 0){
+				$sql .= " AND {$table_prefix}s4u_scansite.id={$siteID}";
+			}
+			
+			$res = $wpdb->get_results($sql);			
 		}
 		else{
-			$res = $wpdb->get_results("SELECT {$table_prefix}s4u_scansite.id
+			$sql = "SELECT {$table_prefix}s4u_scansite.id
 							FROM {$table_prefix}s4u_scansite
 							WHERE {$table_prefix}s4u_scansite.actief = 1
 							AND date(IFNULL({$table_prefix}s4u_scansite.laatste_scan,'1900-01-01')) < '".date('Y-m-d')."'
-							");
+							";
+			if ($siteID > 0){
+				$sql .= " AND {$table_prefix}s4u_scansite.id={$siteID}";
+			}			
+			
+			$res = $wpdb->get_results($sql);
 		}
 
 		foreach ($res as $scansite){

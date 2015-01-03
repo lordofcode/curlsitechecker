@@ -13,6 +13,16 @@
 		<input type="text" name="name" id="name" class="text ui-widget-content ui-corner-all" /><br/>	
 		<label for="url">Url</label>
 		<input type="text" name="url" id="url" class="text ui-widget-content ui-corner-all" /><br/>
+		<label for="category">Categorie</label>
+		<select name="category" id="category">
+		<option value="">Maak een keuze</option>
+		<?php 
+		$cats = get_categories(array('hide_empty' => false));
+		for ($k=0; $k < count($cats); $k++){
+		?><option value="<?php echo $cats[$k]->term_id;?>"><?php echo $cats[$k]->name;?></option><?php 			
+		}
+		?>
+		</select>
 		<label for="actief">Actief</label>
 		<input type="checkbox" name="actief" id="actief" class="text ui-widget-content ui-corner-all" value="1" checked="checked" /><br/>
 		<br/>		
@@ -28,6 +38,16 @@
 		<input type="text" name="name" id="edit_name" class="text ui-widget-content ui-corner-all" /><br/>	
 		<label for="url">Url</label>
 		<input type="text" name="url" id="edit_url" class="text ui-widget-content ui-corner-all" /><br/>
+		<label for="edit_category">Categorie</label>
+		<select name="category" id="edit_category">
+		<option value="">Maak een keuze</option>
+		<?php 
+		$cats = get_categories(array('hide_empty' => false));
+		for ($k=0; $k < count($cats); $k++){
+		?><option value="<?php echo $cats[$k]->term_id;?>"><?php echo $cats[$k]->name;?></option><?php 			
+		}
+		?>
+		</select>		
 		<label for="edit_actief">Actief</label>
 		<input type="checkbox" name="actief" id="edit_actief" class="text ui-widget-content ui-corner-all" value="1" /><br/>
 		<br/>		
@@ -43,8 +63,10 @@
 		CASE WHEN IFNULL(actief,0) = 0 THEN 'inactief'
 		ELSE 'actief' END AS actief,
 		laatste_scan,
+		{$table_prefix}terms.name AS category, 
 		'#' as bewerken
 		FROM {$table_prefix}s4u_scansite
+		LEFT JOIN {$table_prefix}terms ON {$table_prefix}s4u_scansite.category_id = {$table_prefix}terms.term_id  
 		ORDER BY {$table_prefix}s4u_scansite.actief ASC, {$table_prefix}s4u_scansite.url ASC
 		");	
 	echo $mySQL->GetHTML(false);
@@ -62,6 +84,10 @@
 		<input type="text" name="xpath_image" id="xpath_image" class="text ui-widget-content ui-corner-all" /><br/>
 		<label for="xpathknopimage">&nbsp;</label>
 		<input type="button" name="xpathknopimage" id="xpathknopimage" value="Controleer xpath afbeelding" /><br/>
+		<label for="xpath">XPath Link</label>
+		<input type="text" name="xpath_url" id="xpath_url" class="text ui-widget-content ui-corner-all" /><br/>
+		<label for="xpathknopurl">&nbsp;</label>
+		<input type="button" name="xpathknopurl" id="xpathknopurl" value="Controleer xpath link" /><br/>
 		<cite>Test</cite><br/>		
 		<label for="testurl">Test-url</label>
 		<input type="text" name="testurl" id="testurl" class="text ui-widget-content ui-corner-all" /><br/>
@@ -86,7 +112,7 @@ jQuery(function() {
 jQuery(function() {
 	jQuery( "#dialog-form" ).dialog({
 		autoOpen: false,
-		height: 220,
+		height: 260,
 		width: 400,
 		modal: true,
 		buttons: {
@@ -105,7 +131,7 @@ jQuery(function() {
 
 	jQuery( "#edit-dialog-form" ).dialog({
 		autoOpen: false,
-		height: 220,
+		height: 260,
 		width: 400,
 		modal: true,
 		buttons: {
@@ -131,7 +157,7 @@ jQuery(function() {
 
 	jQuery( "#detail-dialog-form" ).dialog({
 		autoOpen: false,
-		height: 400,
+		height: 500,
 		width: 600,
 		modal: true,
 		buttons: {
@@ -166,6 +192,7 @@ jQuery(function() {
 			if (d["result"] == "1"){
 				jQuery("#xpath").val(d["data"]["xpath"]);
 				jQuery("#xpath_image").val(d["data"]["xpath_image"]);
+				jQuery("#xpath_url").val(d["data"]["xpath_url"]);
 				jQuery("#testurl").val(d["data"]["test_url"]);
 			}
 			else{
@@ -181,11 +208,17 @@ jQuery(function() {
 		jQuery("#scansite_edit_id").val(jQuery(this).parent().children("td:eq(0)").html());
 		jQuery("#edit_name").val(jQuery(this).parent().children("td:eq(1)").html());
 		jQuery("#edit_url").val(jQuery(this).parent().children("td:eq(2)").html());
-		
 
 		jQuery("#edit_actief").attr("checked", (jQuery(this).parent().children("td:eq(3)").html() == "actief"));
 		jQuery( "#edit-dialog-form" ).dialog( "open" );
 
+		var catValue = jQuery(this).parent().children("td:eq(5)").html();
+		$("#edit_category option").each(function(){
+			if ($(this).html() == catValue){
+				$(this).attr("selected", true);
+			}
+		});
+		
 		try{
 			jQuery(".ui-dialog .ui-dialog-buttonset").each(function(){
 				if (jQuery(this).children().length == 3){
@@ -223,6 +256,19 @@ jQuery(function() {
 			jQuery("#testresultaat").html(d["message"]);
 		});		
 	});	
+
+	jQuery( "#xpathknopurl" )
+	.click(function() {
+		jQuery("#testresultaat").html("bezig met zoeken...");
+		// ivm 2x een XPATH even de doorgestuurde variabele swappen
+		var t = $("#detail-dialog-form #detailscansite").serialize();
+		t = t.replace("xpath=", "dummyvar=");
+		t = t.replace("xpath_url=", "xpath="); 
+		$.post("/wp-admin/admin.php?page=s4u-prijschecker&custom_action=fetchdatawithxpath", t, function(data){			
+			var d = eval("("+data+")");
+			jQuery("#testresultaat").html(d["message"]);
+		});		
+	});
 	
 	jQuery( "#testknop" )
 	.click(function() {
